@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.enterprise.inject.spi.CDI;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
@@ -50,6 +49,7 @@ import io.smallrye.graphql.bootstrap.ObjectBag;
 import io.smallrye.graphql.bootstrap.TransformException;
 import io.smallrye.graphql.bootstrap.Transformable;
 import io.smallrye.graphql.bootstrap.schema.helper.CollectionHelper;
+import io.smallrye.graphql.cdi.CDIDelegate;
 import io.smallrye.graphql.execution.error.GraphQLExceptionWhileDataFetching;
 
 /**
@@ -70,6 +70,8 @@ public class ReflectionDataFetcher implements DataFetcher {
     private final Class declaringClass;
     private final Class[] parameterClasses;
 
+    private final CDIDelegate cdiDelegate = CDIDelegate.delegate();
+
     public ReflectionDataFetcher(MethodInfo methodInfo, List<Argument> arguments, Annotations annotations) {
         this.methodName = methodInfo.name();
         this.arguments = arguments;
@@ -82,7 +84,7 @@ public class ReflectionDataFetcher implements DataFetcher {
     @Override
     public Object get(DataFetchingEnvironment dfe) throws Exception {
         try {
-            Object declaringObject = CDI.current().select(declaringClass).get();
+            Object declaringObject = cdiDelegate.getInstanceFromCDI(declaringClass);
             Class cdiClass = declaringObject.getClass();
             if (hasArguments) {
                 Method method = cdiClass.getMethod(methodName, parameterClasses);

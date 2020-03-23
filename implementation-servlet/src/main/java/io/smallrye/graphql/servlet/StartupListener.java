@@ -50,7 +50,7 @@ public class StartupListener implements ServletContextListener {
             String realPath = sce.getServletContext().getRealPath("WEB-INF/classes");
             URL url = Paths.get(realPath).toUri().toURL();
             IndexView index = indexInitializer.createIndex(url);
-            bootstrap.bootstrap(index);
+            sce.getServletContext().setAttribute(SmallRyeGraphQLSchemaServlet.SCHEMA_PROP, bootstrap.bootstrap(index));
             LOG.info("SmallRye GraphQL initialized");
         } catch (MalformedURLException ex) {
             throw new RuntimeException(ex);

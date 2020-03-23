@@ -26,8 +26,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.logging.Logger;
 
+import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
-import io.smallrye.graphql.bootstrap.SmallRyeGraphQLBootstrap;
 
 /**
  * Serving the GraphQL schema
@@ -38,24 +38,11 @@ import io.smallrye.graphql.bootstrap.SmallRyeGraphQLBootstrap;
 public class SmallRyeGraphQLSchemaServlet extends HttpServlet {
     private static final Logger LOG = Logger.getLogger(SmallRyeGraphQLSchemaServlet.class.getName());
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        response.setContentType(CONTENT_TYPE);
-        try (PrintWriter out = response.getWriter()) {
-            out.print(graphQLSchemaToString());
-            out.flush();
-        } catch (IOException ex) {
-            LOG.log(Logger.Level.ERROR, null, ex);
-        }
-    }
+    public static final String SCHEMA_PROP = "io.smallrye.graphql.servlet.bootstrap";
 
-    private String graphQLSchemaToString() {
-        return SCHEMA_PRINTER.print(SmallRyeGraphQLBootstrap.GRAPHQL_SCHEMA);
-    }
+    private SchemaPrinter schemaPrinter;
 
-    private static final String CONTENT_TYPE = "text/plain";
-    private static SchemaPrinter SCHEMA_PRINTER;
-    static {
+    public SmallRyeGraphQLSchemaServlet() {
         SchemaPrinter.Options options = SchemaPrinter.Options.defaultOptions();
         options = options.descriptionsAsHashComments(false);
         options = options.includeDirectives(false);
@@ -64,6 +51,24 @@ public class SmallRyeGraphQLSchemaServlet extends HttpServlet {
         options = options.includeScalarTypes(false);
         options = options.includeSchemaDefinition(false);
         options = options.useAstDefinitions(false);
-        SCHEMA_PRINTER = new SchemaPrinter(options);
+        schemaPrinter = new SchemaPrinter(options);
     }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+        response.setContentType(CONTENT_TYPE);
+        try (PrintWriter out = response.getWriter()) {
+            out.print(graphQLSchemaToString(request));
+            out.flush();
+        } catch (IOException ex) {
+            LOG.log(Logger.Level.ERROR, null, ex);
+        }
+    }
+
+    private String graphQLSchemaToString(HttpServletRequest request) {
+        return schemaPrinter.print((GraphQLSchema) request.getServletContext().getAttribute(SCHEMA_PROP));
+    }
+
+    private static final String CONTENT_TYPE = "text/plain";
+
 }
